@@ -14,7 +14,7 @@ public class UserFrame extends JFrame {
     public UserFrame(UserSession session, MainFrame mainFrame) {
         this.userSession = session;
         this.mainFrame = mainFrame;
-        this.libraryManager = new LibraryManager();
+        this.libraryManager = mainFrame.getLibraryManager(); // 메인 프레임에서 LibraryManager를 전달받음
         setTitle("My Page");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);

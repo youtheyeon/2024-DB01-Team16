@@ -23,8 +23,10 @@ public class MainFrame extends JFrame {
         JLabel titleLabel = new JLabel("Library Management System", JLabel.CENTER);
         titleLabel.setFont(new Font("Serif", Font.BOLD, 24));
         JButton myPageButton = new JButton("MyPage");
+        JButton bookManagementButton = new JButton("Book Management");
         topPanel.add(titleLabel, BorderLayout.CENTER);
         topPanel.add(myPageButton, BorderLayout.EAST);
+        topPanel.add(bookManagementButton, BorderLayout.WEST);
         add(topPanel, BorderLayout.NORTH);
 
         // 오른쪽 패널
@@ -85,6 +87,14 @@ public class MainFrame extends JFrame {
             setVisible(false);
         });
 
+        // 도서 관리 페이지 버튼 클릭 시 도서 관리 페이지로 이동
+        bookManagementButton.addActionListener(e -> {
+            BookManagementFrame bookManagementFrame = new BookManagementFrame(libraryManager, this);
+            bookManagementFrame.setVisible(true);
+            setVisible(false);
+        });
+
+
         // 테이블 행 선택 리스너 추가
         bookTable.getSelectionModel().addListSelectionListener(event -> {
             if (!event.getValueIsAdjusting() && bookTable.getSelectedRow() != -1) {
@@ -118,5 +128,9 @@ public class MainFrame extends JFrame {
                 JOptionPane.showMessageDialog(this, bookTitle + "를(을) 대출했습니다!", "도서 대출 완료", JOptionPane.PLAIN_MESSAGE);
             }
         }
+    }
+
+    public LibraryManager getLibraryManager() {
+        return libraryManager;
     }
 }
