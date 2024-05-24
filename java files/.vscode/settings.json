@@ -1,7 +1,5 @@
 {
-    "java.project.sourcePaths": ["src"],
-    "java.project.outputPath": "bin",
-    "java.project.referencedLibraries": [
-        "lib/**/*.jar"
-    ]
+  "java.project.sourcePaths": ["src", "2024-DB01-Team16-1/java files/src"],
+  "java.project.outputPath": "bin",
+  "java.project.referencedLibraries": ["lib/**/*.jar"]
 }

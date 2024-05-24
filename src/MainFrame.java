@@ -8,11 +8,8 @@ public class MainFrame extends JFrame {
     private LibraryManager libraryManager;
     private JButton borrowButton;
 
-    public MainFrame(UserSession session, Connection conn) { // Connection conn 추가
-        
+    public MainFrame(UserSession session) {
         this.userSession = session;
-        this.libraryManager = new LibraryManager(conn); //db 연동 전달
-        
         this.libraryManager = new LibraryManager();
         setTitle("Library Management System");
         setSize(800, 600);
