@@ -122,16 +122,16 @@ public class MainFrame extends JFrame {
         List<Book> books;
 
         if (!filterText.isEmpty()) {
-            books = libraryManager.getBooksByFilter(filterField.getText().trim());
+            books = libraryManager.getBooksByFilter(filterText);
+            bookCountLabel.setText("Books Found: " + libraryManager.getBooksCountByFilter(filterText));
         } else {
             books = libraryManager.getBooks();
+            bookCountLabel.setText("Books Found: " + books.size());
         }
 
         for (Book book : books) {
             tableModel.addRow(new Object[]{book.getBookId(), libraryManager.getCategoryNameById(book.getCategoryId()), book.getTitle(), book.getAuthorName(), book.getPublisher(), book.isBorrowed() ? "Yes" : "No"});
         }
-
-        bookCountLabel.setText("Books Found: " + books.size());
     }
 
     @Override

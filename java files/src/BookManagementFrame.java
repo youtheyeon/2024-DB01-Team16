@@ -104,7 +104,7 @@ public class BookManagementFrame extends JFrame {
         for (Book book : books) {
             tableModel.addRow(new Object[]{
                 book.getBookId(),
-                book.getCategory(),
+                libraryManager.getCategoryNameById(book.getCategoryId()),
                 book.getTitle(),
                 book.getAuthorName(),
                 book.getPublisher(),

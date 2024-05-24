@@ -4,6 +4,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -61,6 +63,31 @@ public class LibraryManager {
         }
 
         return books;
+    }
+
+    public Map<String, Integer> getBooksCountByFilter(String filterText) {
+        Map<String, Integer> bookCounts = new HashMap<>();
+        String query = "SELECT c.category, COUNT(*) as count " +
+                       "FROM Book b JOIN Category c ON b.category_id = c.category_id " +
+                       "WHERE LOWER(b.title) LIKE ? OR LOWER(b.author_name) LIKE ? OR LOWER(c.category) LIKE ? " +
+                       "GROUP BY c.category";
+
+        try (Connection connection = App.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(query)) {
+            String searchText = "%" + filterText.toLowerCase() + "%";
+            stmt.setString(1, searchText);
+            stmt.setString(2, searchText);
+            stmt.setString(3, searchText);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    bookCounts.put(rs.getString("category"), rs.getInt("count"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return bookCounts;
     }
 
     private int getCategoryId(String searchText) {
