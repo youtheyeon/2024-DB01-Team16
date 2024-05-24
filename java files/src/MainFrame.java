@@ -124,7 +124,7 @@ public class MainFrame extends JFrame {
         tableModel.setRowCount(0);
 
         String filterText = filterField.getText().trim();
-        List<Book> books;
+        List<FilteredBooks> books;
 
         if (!filterText.isEmpty()) {
             books = libraryManager.getBooksByFilter(filterText);
@@ -134,8 +134,8 @@ public class MainFrame extends JFrame {
             bookCountLabel.setText("Books Found: " + books.size());
         }
 
-        for (Book book : books) {
-            tableModel.addRow(new Object[]{book.getBookId(), libraryManager.getCategoryNameById(book.getCategoryId()), book.getTitle(), book.getAuthorName(), book.getPublisher(), book.isBorrowed() ? "Yes" : "No"});
+        for (FilteredBooks book : books) {
+            tableModel.addRow(new Object[]{book.getBookId(), book.getCategory(), book.getTitle(), book.getAuthorName(), book.getPublisher(), book.isBorrowed() ? "Yes" : "No"});
         }
     }
 

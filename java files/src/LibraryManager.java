@@ -11,28 +11,28 @@ import java.time.format.DateTimeFormatter;
 
 public class LibraryManager {
 
-    public List<Book> getBooks() {
-        List<Book> books = new ArrayList<>();
-        String selectSQL = "SELECT book_id, category_id, title, author_name, publisher, is_borrowed FROM Book";
-
+    public List<FilteredBooks> getBooks() {
+        List<FilteredBooks> books = new ArrayList<>();
+        String selectSQL = "SELECT book_id, category, title, author_name, publisher, is_borrowed FROM FilteredBooks";
+    
         try (Connection connection = App.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(selectSQL);
-            ResultSet resultSet = preparedStatement.executeQuery()) {
-
+             PreparedStatement preparedStatement = connection.prepareStatement(selectSQL);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+    
             while (resultSet.next()) {
                 int bookId = resultSet.getInt("book_id");
-                int categoryId = resultSet.getInt("category_id");
+                String category = resultSet.getString("category");
                 String title = resultSet.getString("title");
                 String authorName = resultSet.getString("author_name");
                 String publisher = resultSet.getString("publisher");
                 boolean isBorrowed = resultSet.getBoolean("is_borrowed");
-                books.add(new Book(bookId, categoryId, title, authorName, publisher, isBorrowed));
+                books.add(new FilteredBooks(bookId, category, title, authorName, publisher, isBorrowed));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return books;
-    }
+    }    
 
     public List<BookDetails> getBookDetails() {
         List<BookDetails> books = new ArrayList<>();
@@ -61,23 +61,23 @@ public class LibraryManager {
         return books;
     }
 
-    public List<Book> getBooksByFilter(String filterText) {
-        List<Book> books = new ArrayList<>();
-        String query = "SELECT b.book_id, b.category_id, b.title, b.author_name, b.publisher, b.is_borrowed " +
-        "FROM Book b JOIN Category c ON b.category_id = c.category_id " +
-        "WHERE LOWER(b.title) LIKE ? OR LOWER(b.author_name) LIKE ? OR LOWER(c.category) LIKE ?";
+    public List<FilteredBooks> getBooksByFilter(String filterText) {
+        List<FilteredBooks> books = new ArrayList<>();
+        String query = "SELECT book_id, category, title, author_name, publisher, is_borrowed " +
+                       "FROM FilteredBooks " +
+                       "WHERE LOWER(title) LIKE ? OR LOWER(author_name) LIKE ? OR LOWER(category) LIKE ?";
         
         try (Connection connection = App.getConnection();
-            PreparedStatement stmt = connection.prepareStatement(query)) {
+             PreparedStatement stmt = connection.prepareStatement(query)) {
             String searchText = "%" + filterText.toLowerCase() + "%";
             stmt.setString(1, searchText);
             stmt.setString(2, searchText);
             stmt.setString(3, searchText);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    books.add(new Book(
+                    books.add(new FilteredBooks(
                             rs.getInt("book_id"),
-                            rs.getInt("category_id"),
+                            rs.getString("category"),
                             rs.getString("title"),
                             rs.getString("author_name"),
                             rs.getString("publisher"),
@@ -88,9 +88,9 @@ public class LibraryManager {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
+    
         return books;
-    }
+    }    
 
     public Map<String, Integer> getBooksCountByFilter(String filterText) {
         Map<String, Integer> bookCounts = new HashMap<>();
@@ -280,24 +280,5 @@ public class LibraryManager {
             e.printStackTrace();
         }
         return borrowedBooks;
-    }
-
-    public String getCategoryNameById(int categoryId) {
-        String category = "Unknown";
-        String query = "SELECT category FROM Category WHERE category_id = ?";
-
-        try (Connection connection = App.getConnection();
-            PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setInt(1, categoryId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    category = rs.getString("category");
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return category;
     }
 }
