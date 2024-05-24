@@ -8,7 +8,8 @@ public class MainFrame extends JFrame {
     private LibraryManager libraryManager;
     private JButton borrowButton;
     private DefaultTableModel tableModel;
-    private JComboBox<String> categoryComboBox;
+    private JTextField filterField;
+    private JLabel bookCountLabel;
 
     public MainFrame(UserSession session) {
         this.userSession = session;
@@ -21,7 +22,7 @@ public class MainFrame extends JFrame {
 
         // 상단 패널: 제목 & 마이페이지 버튼
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); 
+        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JLabel titleLabel = new JLabel("Library Management System", JLabel.CENTER);
         titleLabel.setFont(new Font("Serif", Font.BOLD, 24));
         JButton myPageButton = new JButton("MyPage");
@@ -38,17 +39,15 @@ public class MainFrame extends JFrame {
         // 검색창 패널
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(new BoxLayout(searchPanel, BoxLayout.Y_AXIS));
-        searchPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20)); 
-        JTextField searchField = new JTextField(20);
-        searchField.setMaximumSize(new Dimension(300, 30));
-        searchPanel.add(searchField);
+        searchPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20));
+        filterField = new JTextField(20);
+        filterField.setMaximumSize(new Dimension(300, 30));
+        searchPanel.add(filterField);
 
-        // 카테고리 드롭다운 패널
-        String[] categories = {"All", "Novel", "Essay", "Literature", "Science"};
-        categoryComboBox = new JComboBox<>(categories);
-        categoryComboBox.setMaximumSize(new Dimension(300, 30)); 
+        // 책 개수 라벨
+        bookCountLabel = new JLabel("Books Found: 0");
         searchPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        searchPanel.add(categoryComboBox);
+        searchPanel.add(bookCountLabel);
 
         rightPanel.add(searchPanel);
         add(rightPanel, BorderLayout.EAST);
@@ -109,8 +108,8 @@ public class MainFrame extends JFrame {
             setVisible(false);
         });
 
-        // 카테고리 콤보박스 리스너 추가
-        categoryComboBox.addActionListener(e -> loadBookList());
+        // 검색 필드 입력 리스너 추가
+        filterField.addActionListener(e -> loadBookList());
 
         // 책 목록 불러오기
         loadBookList();
@@ -119,29 +118,20 @@ public class MainFrame extends JFrame {
     private void loadBookList() {
         tableModel.setRowCount(0);
 
-        String selectedCategory = (String) categoryComboBox.getSelectedItem();
+        String filterText = filterField.getText().trim();
         List<Book> books;
 
-        if (selectedCategory != null && !selectedCategory.equals("All")) {
-            books = libraryManager.getBooksByCategory(selectedCategory);
+        if (!filterText.isEmpty()) {
+            books = libraryManager.getBooksByFilter(filterField.getText().trim());
         } else {
             books = libraryManager.getBooks();
         }
 
         for (Book book : books) {
-            String category = getCategoryName(book.getCategoryId());
-            tableModel.addRow(new Object[]{book.getBookId(), category, book.getTitle(), book.getAuthorName(), book.getPublisher(), book.isBorrowed() ? "Yes" : "No"});
+            tableModel.addRow(new Object[]{book.getBookId(), libraryManager.getCategoryNameById(book.getCategoryId()), book.getTitle(), book.getAuthorName(), book.getPublisher(), book.isBorrowed() ? "Yes" : "No"});
         }
-    }
 
-    private String getCategoryName(int categoryId) {
-        switch (categoryId) {
-            case 1: return "Novel";
-            case 2: return "Essay";
-            case 3: return "Literature";
-            case 4: return "Science";
-            default: return "Unknown";
-        }
+        bookCountLabel.setText("Books Found: " + books.size());
     }
 
     @Override

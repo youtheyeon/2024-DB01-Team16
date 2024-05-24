@@ -42,19 +42,4 @@ public class Book {
     public void setBorrowed(boolean borrowed) {
         isBorrowed = borrowed;
     }
-
-    public String getCategory() {
-        switch (categoryId) {
-            case 1:
-                return "Novel";
-            case 2:
-                return "Essay";
-            case 3:
-                return "Literature";
-            case 4:
-                return "Science";
-            default:
-                return "Unknown";
-        }
-    }
 }

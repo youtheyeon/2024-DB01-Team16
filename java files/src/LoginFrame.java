@@ -53,7 +53,14 @@ public class LoginFrame extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             String userName = userNameField.getText();
-            String phoneNumber = phoneNumberField.getText();
+            int phoneNumber;
+
+            try {
+                phoneNumber = Integer.parseInt(phoneNumberField.getText());
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(LoginFrame.this, "Invalid phone number", "Login Failed", JOptionPane.PLAIN_MESSAGE);
+                return;
+            }
 
             if (saveToDatabase(userName, phoneNumber)) {
                 UserSession session = new UserSession();
@@ -70,17 +77,13 @@ public class LoginFrame extends JFrame {
             }
         }
 
-        private boolean saveToDatabase(String userName, String phoneNumber) {
-            String url = "jdbc:mysql://localhost:3306/librarymanagement";
-            String user = "root";  // 데이터베이스 사용자 이름
-            String password = "";  // 데이터베이스 비밀번호
-
+        private boolean saveToDatabase(String userName, int phoneNumber) {
             String query = "INSERT INTO user (user_name, phone_num) VALUES (?, ?)";
 
-            try (Connection conn = DriverManager.getConnection(url, user, password);
-                 PreparedStatement stmt = conn.prepareStatement(query)) {
+            try (Connection connection = App.getConnection();
+                PreparedStatement stmt = connection.prepareStatement(query)) {
                 stmt.setString(1, userName);
-                stmt.setString(2, phoneNumber);
+                stmt.setInt(2, phoneNumber);
                 stmt.executeUpdate();
                 return true;
             } catch (SQLException ex) {
@@ -88,12 +91,5 @@ public class LoginFrame extends JFrame {
                 return false;
             }
         }
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            LoginFrame frame = new LoginFrame();
-            frame.setVisible(true);
-        });
     }
 }

@@ -32,13 +32,18 @@ public class LibraryManager {
         return books;
     }
 
-    public List<Book> getBooksByCategory(String category) {
+    public List<Book> getBooksByFilter(String filterText) {
         List<Book> books = new ArrayList<>();
-        String query = "SELECT * FROM Book WHERE category_id = ?";
-
+        String query = "SELECT b.book_id, b.category_id, b.title, b.author_name, b.publisher, b.is_borrowed " +
+        "FROM Book b JOIN Category c ON b.category_id = c.category_id " +
+        "WHERE LOWER(b.title) LIKE ? OR LOWER(b.author_name) LIKE ? OR LOWER(c.category) LIKE ?";
+        
         try (Connection connection = App.getConnection();
-            PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setInt(1, getCategoryId(category));
+             PreparedStatement stmt = connection.prepareStatement(query)) {
+            String searchText = "%" + filterText.toLowerCase() + "%";
+            stmt.setString(1, searchText);
+            stmt.setString(2, searchText);
+            stmt.setString(3, searchText);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     books.add(new Book(
@@ -56,6 +61,16 @@ public class LibraryManager {
         }
 
         return books;
+    }
+
+    private int getCategoryId(String searchText) {
+        switch (searchText) {
+            case "novel": return 1;
+            case "essay": return 2;
+            case ";iterature": return 3;
+            case "science": return 4;
+            default: return -1;
+        }
     }
 
     public void addBook(Book book) {
@@ -130,7 +145,8 @@ public class LibraryManager {
         String deleteQuery = "DELETE FROM Borrow WHERE user_id = ? AND book_id = ?";
         String updateQuery = "UPDATE Book SET is_borrowed = FALSE WHERE book_id = ?";
 
-        try (PreparedStatement deleteStmt = connection.prepareStatement(deleteQuery);
+        try (Connection connection = App.getConnection();
+            PreparedStatement deleteStmt = connection.prepareStatement(deleteQuery);
             PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
 
             deleteStmt.setInt(1, userId);
@@ -144,16 +160,6 @@ public class LibraryManager {
         }
     }
 
-    private int getCategoryId(String category) {
-        switch (category) {
-            case "Novel": return 1;
-            case "Essay": return 2;
-            case "Literature": return 3;
-            case "Science": return 4;
-            default: return -1;
-        }
-    }
-
     public List<BorrowedBook> getBorrowedBooks(int userId) {
         List<BorrowedBook> borrowedBooks = new ArrayList<>();
         String query = "SELECT b.borrow_id, b.borrow_date, b.return_date, b.user_id, b.book_id, " +
@@ -162,7 +168,8 @@ public class LibraryManager {
                        "JOIN Book bk ON b.book_id = bk.book_id " +
                        "WHERE b.user_id = ?";
 
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+        try (Connection connection = App.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, userId);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
@@ -181,5 +188,24 @@ public class LibraryManager {
             e.printStackTrace();
         }
         return borrowedBooks;
+    }
+
+    public String getCategoryNameById(int categoryId) {
+        String category = "Unknown";
+        String query = "SELECT category FROM Category WHERE category_id = ?";
+
+        try (Connection connection = App.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, categoryId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    category = rs.getString("category");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return category;
     }
 }

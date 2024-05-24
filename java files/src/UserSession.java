@@ -1,7 +1,7 @@
 public class UserSession {
     private String userName;
     private int userId;
-    private String phoneNumber;  // 전화번호 필드 추가
+    private int phoneNumber;
 
     public String getUserName() {
         return userName;
@@ -19,11 +19,11 @@ public class UserSession {
         this.userId = userId;
     }
 
-    public String getPhoneNumber() {
+    public int getPhoneNumber() {
         return phoneNumber;
     }
 
-    public void setPhoneNumber(String phoneNumber) {
+    public void setPhoneNumber(int phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
 }
