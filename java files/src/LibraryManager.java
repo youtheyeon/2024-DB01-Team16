@@ -14,8 +14,8 @@ public class LibraryManager {
         String selectSQL = "SELECT book_id, category_id, title, author_name, publisher, is_borrowed FROM Book";
 
         try (Connection connection = App.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(selectSQL);
-             ResultSet resultSet = preparedStatement.executeQuery()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(selectSQL);
+            ResultSet resultSet = preparedStatement.executeQuery()) {
 
             while (resultSet.next()) {
                 int bookId = resultSet.getInt("book_id");
@@ -32,11 +32,37 @@ public class LibraryManager {
         return books;
     }
 
+    public List<Book> getBooksByCategory(String category) {
+        List<Book> books = new ArrayList<>();
+        String query = "SELECT * FROM Book WHERE category_id = ?";
+
+        try (Connection connection = App.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, getCategoryId(category));
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    books.add(new Book(
+                            rs.getInt("book_id"),
+                            rs.getInt("category_id"),
+                            rs.getString("title"),
+                            rs.getString("author_name"),
+                            rs.getString("publisher"),
+                            rs.getBoolean("is_borrowed")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return books;
+    }
+
     public void addBook(Book book) {
         String insertSQL = "INSERT INTO Book (category_id, title, author_name, publisher, is_borrowed) VALUES (?, ?, ?, ?, ?)";
     
         try (Connection connection = App.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(insertSQL)) {
+            PreparedStatement preparedStatement = connection.prepareStatement(insertSQL)) {
             preparedStatement.setInt(1, book.getCategoryId());
             preparedStatement.setString(2, book.getTitle());
             preparedStatement.setString(3, book.getAuthorName());
@@ -54,8 +80,8 @@ public class LibraryManager {
         String deleteBookSQL = "DELETE FROM Book WHERE book_id = ?";
     
         try (Connection connection = App.getConnection();
-             PreparedStatement deleteBorrowStatement = connection.prepareStatement(deleteBorrowSQL);
-             PreparedStatement deleteBookStatement = connection.prepareStatement(deleteBookSQL)) {
+            PreparedStatement deleteBorrowStatement = connection.prepareStatement(deleteBorrowSQL);
+            PreparedStatement deleteBookStatement = connection.prepareStatement(deleteBookSQL)) {
             
             deleteBorrowStatement.setInt(1, bookId);
             deleteBorrowStatement.executeUpdate();
@@ -73,8 +99,8 @@ public class LibraryManager {
         String updateBookSQL = "UPDATE Book SET is_borrowed = true WHERE book_id = ?";
 
         try (Connection connection = App.getConnection();
-             PreparedStatement insertBorrowStatement = connection.prepareStatement(insertBorrowSQL);
-             PreparedStatement updateBookStatement = connection.prepareStatement(updateBookSQL)) {
+            PreparedStatement insertBorrowStatement = connection.prepareStatement(insertBorrowSQL);
+            PreparedStatement updateBookStatement = connection.prepareStatement(updateBookSQL)) {
 
             // 대출일을 현재 시간으로 설정
             LocalDate borrowDate = LocalDate.now();
@@ -105,7 +131,7 @@ public class LibraryManager {
         String updateQuery = "UPDATE Book SET is_borrowed = FALSE WHERE book_id = ?";
 
         try (PreparedStatement deleteStmt = connection.prepareStatement(deleteQuery);
-             PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
+            PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
 
             deleteStmt.setInt(1, userId);
             deleteStmt.setInt(2, bookId);
@@ -115,6 +141,16 @@ public class LibraryManager {
             updateStmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    private int getCategoryId(String category) {
+        switch (category) {
+            case "Novel": return 1;
+            case "Essay": return 2;
+            case "Literature": return 3;
+            case "Science": return 4;
+            default: return -1;
         }
     }
 

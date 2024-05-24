@@ -8,6 +8,7 @@ public class MainFrame extends JFrame {
     private LibraryManager libraryManager;
     private JButton borrowButton;
     private DefaultTableModel tableModel;
+    private JComboBox<String> categoryComboBox;
 
     public MainFrame(UserSession session) {
         this.userSession = session;
@@ -44,7 +45,7 @@ public class MainFrame extends JFrame {
 
         // 카테고리 드롭다운 패널
         String[] categories = {"All", "Novel", "Essay", "Literature", "Science"};
-        JComboBox<String> categoryComboBox = new JComboBox<>(categories);
+        categoryComboBox = new JComboBox<>(categories);
         categoryComboBox.setMaximumSize(new Dimension(300, 30)); 
         searchPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         searchPanel.add(categoryComboBox);
@@ -108,20 +109,30 @@ public class MainFrame extends JFrame {
             setVisible(false);
         });
 
+        // 카테고리 콤보박스 리스너 추가
+        categoryComboBox.addActionListener(e -> loadBookList());
+
         // 책 목록 불러오기
         loadBookList();
     }
 
     private void loadBookList() {
         tableModel.setRowCount(0);
-        
-        List<Book> books = libraryManager.getBooks();
+
+        String selectedCategory = (String) categoryComboBox.getSelectedItem();
+        List<Book> books;
+
+        if (selectedCategory != null && !selectedCategory.equals("All")) {
+            books = libraryManager.getBooksByCategory(selectedCategory);
+        } else {
+            books = libraryManager.getBooks();
+        }
+
         for (Book book : books) {
             String category = getCategoryName(book.getCategoryId());
             tableModel.addRow(new Object[]{book.getBookId(), category, book.getTitle(), book.getAuthorName(), book.getPublisher(), book.isBorrowed() ? "Yes" : "No"});
         }
     }
-    
 
     private String getCategoryName(int categoryId) {
         switch (categoryId) {
