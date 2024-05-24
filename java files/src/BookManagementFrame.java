@@ -19,7 +19,7 @@ public class BookManagementFrame extends JFrame {
 
         // 책 목록 테이블
         JTable bookTable = new JTable();
-        tableModel = new DefaultTableModel(new Object[]{"ID", "Category", "Title", "Author Name", "Publisher", "Is Borrowed"}, 0) {
+        tableModel = new DefaultTableModel(new Object[]{"ID", "Category", "Title", "Author Name", "Publisher", "Borrow Date", "Return Date", "User Name"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -163,15 +163,17 @@ public class BookManagementFrame extends JFrame {
 
     private void loadBookList() {
         tableModel.setRowCount(0); // Clear existing rows
-        List<Book> books = libraryManager.getBooks();
-        for (Book book : books) {
+        List<BookDetails> books = libraryManager.getBookDetails();
+        for (BookDetails book : books) {
             tableModel.addRow(new Object[]{
                 book.getBookId(),
-                libraryManager.getCategoryNameById(book.getCategoryId()),
+                book.getCategory(),
                 book.getTitle(),
                 book.getAuthorName(),
                 book.getPublisher(),
-                book.isBorrowed() ? "Yes" : "No"
+                book.getBorrowDate(),
+                book.getReturnDate(),
+                book.getUserName(),
             });
         }
     }

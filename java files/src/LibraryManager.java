@@ -34,6 +34,33 @@ public class LibraryManager {
         return books;
     }
 
+    public List<BookDetails> getBookDetails() {
+        List<BookDetails> books = new ArrayList<>();
+        String query = "SELECT book_id, title, author_name, publisher, category, borrow_date, return_date, user_name FROM BookDetails";
+
+        try (Connection connection = App.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                books.add(new BookDetails(
+                    rs.getInt("book_id"),
+                    rs.getString("title"),
+                    rs.getString("author_name"),
+                    rs.getString("publisher"),
+                    rs.getString("category"),
+                    rs.getString("borrow_date"),
+                    rs.getString("return_date"),
+                    rs.getString("user_name")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return books;
+    }
+
     public List<Book> getBooksByFilter(String filterText) {
         List<Book> books = new ArrayList<>();
         String query = "SELECT b.book_id, b.category_id, b.title, b.author_name, b.publisher, b.is_borrowed " +
