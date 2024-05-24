@@ -7,6 +7,9 @@ public class MainFrame extends JFrame {
     private UserSession userSession;
     private LibraryManager libraryManager;
     private JButton borrowButton;
+    private DefaultTableModel tableModel;
+    private JTextField filterField;
+    private JLabel bookCountLabel;
 
     public MainFrame(UserSession session) {
         this.userSession = session;
@@ -19,7 +22,7 @@ public class MainFrame extends JFrame {
 
         // 상단 패널: 제목 & 마이페이지 버튼
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); 
+        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JLabel titleLabel = new JLabel("Library Management System", JLabel.CENTER);
         titleLabel.setFont(new Font("Serif", Font.BOLD, 24));
         JButton myPageButton = new JButton("MyPage");
@@ -36,17 +39,15 @@ public class MainFrame extends JFrame {
         // 검색창 패널
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(new BoxLayout(searchPanel, BoxLayout.Y_AXIS));
-        searchPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20)); 
-        JTextField searchField = new JTextField(20);
-        searchField.setMaximumSize(new Dimension(300, 30));
-        searchPanel.add(searchField);
+        searchPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20));
+        filterField = new JTextField(20);
+        filterField.setMaximumSize(new Dimension(300, 30));
+        searchPanel.add(filterField);
 
-        // 카테고리 드롭다운 패널
-        String[] categories = {"전체", "소설", "에세이", "인문", "과학"};
-        JComboBox<String> categoryComboBox = new JComboBox<>(categories);
-        categoryComboBox.setMaximumSize(new Dimension(300, 30)); 
+        // 책 개수 라벨
+        bookCountLabel = new JLabel("Books Found: 0");
         searchPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        searchPanel.add(categoryComboBox);
+        searchPanel.add(bookCountLabel);
 
         rightPanel.add(searchPanel);
         add(rightPanel, BorderLayout.EAST);
@@ -56,13 +57,14 @@ public class MainFrame extends JFrame {
         bookListPanel.setBorder(BorderFactory.createEmptyBorder(4, 20, 20, 10));
 
         JTable bookTable = new JTable();
-        DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"Title", "Author Name", "Publisher", "Is Borrowed"}, 0) {
+        tableModel = new DefaultTableModel(new Object[]{"ID", "Category", "Title", "Author Name", "Publisher", "Is Borrowed"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
         bookTable.setModel(tableModel);
+
         JScrollPane scrollPane = new JScrollPane(bookTable);
         bookListPanel.add(scrollPane, BorderLayout.CENTER);
         add(bookListPanel, BorderLayout.CENTER);
@@ -71,18 +73,35 @@ public class MainFrame extends JFrame {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         borrowButton = new JButton("Borrow");
         borrowButton.setVisible(false); // 초기에는 버튼을 숨김
-        borrowButton.addActionListener(e -> borrowBook(bookTable));
+        borrowButton.addActionListener(e -> {
+            int selectedRow = bookTable.getSelectedRow();
+            if (selectedRow != -1 && bookTable.getValueAt(selectedRow, 5) == "No") {
+                int bookId = (int) bookTable.getValueAt(selectedRow, 0);
+                libraryManager.borrowBook(userSession.getUserId(), bookId); // 대출하기 메서드 호출
+                boolean isBorrowed = true;
+                tableModel.setValueAt(isBorrowed ? "Yes" : "No", selectedRow, 5);
+                JOptionPane.showMessageDialog(this, bookTable.getValueAt(selectedRow, 2) + " has been borrowed!", "Book Borrow Complete", JOptionPane.PLAIN_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, bookTable.getValueAt(selectedRow, 2) + " cannot be borrowed :(", "Book Borrow Unavailable", JOptionPane.PLAIN_MESSAGE);
+            }
+        });
         buttonPanel.add(borrowButton);
 
-        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
         rightPanel.add(buttonPanel);
-        
-        // 책 목록 조회
-        displayBooks(tableModel);
+
+        // 테이블 행 선택 리스너 추가
+        bookTable.getSelectionModel().addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting() && bookTable.getSelectedRow() != -1) {
+                borrowButton.setVisible(true); // 대출하기 버튼 표시
+            } else {
+                borrowButton.setVisible(false); // 대출하기 버튼 숨김
+            }
+        });
 
         // 마이페이지 버튼 클릭 시 마이페이지로 이동
         myPageButton.addActionListener(e -> {
-            UserFrame userFrame = new UserFrame(userSession, this);
+            UserFrame userFrame = new UserFrame(libraryManager, userSession, this);
             userFrame.setVisible(true);
             setVisible(false);
         });
@@ -94,43 +113,37 @@ public class MainFrame extends JFrame {
             setVisible(false);
         });
 
+        // 검색 필드 입력 리스너 추가
+        filterField.addActionListener(e -> loadBookList());
 
-        // 테이블 행 선택 리스너 추가
-        bookTable.getSelectionModel().addListSelectionListener(event -> {
-            if (!event.getValueIsAdjusting() && bookTable.getSelectedRow() != -1) {
-                borrowButton.setVisible(true); // 책이 선택되면 버튼을 보이게 함
-            } else {
-                borrowButton.setVisible(false); // 선택이 해제되면 버튼을 숨김
-            }
-        });
+        // 책 목록 불러오기
+        loadBookList();
     }
 
-    private void displayBooks(DefaultTableModel tableModel) {
-        List<Book> books = libraryManager.getBooks();
+    private void loadBookList() {
+        tableModel.setRowCount(0);
+
+        String filterText = filterField.getText().trim();
+        List<Book> books;
+
+        if (!filterText.isEmpty()) {
+            books = libraryManager.getBooksByFilter(filterText);
+            bookCountLabel.setText("Books Found: " + libraryManager.getBooksCountByFilter(filterText));
+        } else {
+            books = libraryManager.getBooks();
+            bookCountLabel.setText("Books Found: " + books.size());
+        }
+
         for (Book book : books) {
-            tableModel.addRow(new Object[]{
-                book.getTitle(),
-                book.getAuthorName(),
-                book.getPublisher(),
-                book.isBorrowed() ? "Yes" : "No"
-            });
+            tableModel.addRow(new Object[]{book.getBookId(), libraryManager.getCategoryNameById(book.getCategoryId()), book.getTitle(), book.getAuthorName(), book.getPublisher(), book.isBorrowed() ? "Yes" : "No"});
         }
     }
 
-    private void borrowBook(JTable bookTable) {
-        int selectedRow = bookTable.getSelectedRow();
-        if (selectedRow != -1) {
-            String bookTitle = (String) bookTable.getValueAt(selectedRow, 0);
-            String isBorrowed = (String) bookTable.getValueAt(selectedRow, 3);
-            if ("Yes".equals(isBorrowed)) {
-                JOptionPane.showMessageDialog(this, bookTitle + "는(은) 대출이 불가능합니다:(", "도서 대출 불가능", JOptionPane.PLAIN_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, bookTitle + "를(을) 대출했습니다!", "도서 대출 완료", JOptionPane.PLAIN_MESSAGE);
-            }
+    @Override
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        if (visible) {
+            loadBookList();
         }
-    }
-
-    public LibraryManager getLibraryManager() {
-        return libraryManager;
     }
 }
