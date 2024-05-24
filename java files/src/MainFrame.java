@@ -7,6 +7,7 @@ public class MainFrame extends JFrame {
     private UserSession userSession;
     private LibraryManager libraryManager;
     private JButton borrowButton;
+    private DefaultTableModel tableModel;
 
     public MainFrame(UserSession session) {
         this.userSession = session;
@@ -42,7 +43,7 @@ public class MainFrame extends JFrame {
         searchPanel.add(searchField);
 
         // 카테고리 드롭다운 패널
-        String[] categories = {"전체", "소설", "에세이", "인문", "과학"};
+        String[] categories = {"All", "Novel", "Essay", "Literature", "Science"};
         JComboBox<String> categoryComboBox = new JComboBox<>(categories);
         categoryComboBox.setMaximumSize(new Dimension(300, 30)); 
         searchPanel.add(Box.createRigidArea(new Dimension(0, 10)));
@@ -56,13 +57,14 @@ public class MainFrame extends JFrame {
         bookListPanel.setBorder(BorderFactory.createEmptyBorder(4, 20, 20, 10));
 
         JTable bookTable = new JTable();
-        DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"Title", "Author Name", "Publisher", "Is Borrowed"}, 0) {
+        tableModel = new DefaultTableModel(new Object[]{"ID", "Category", "Title", "Author Name", "Publisher", "Is Borrowed"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
         bookTable.setModel(tableModel);
+
         JScrollPane scrollPane = new JScrollPane(bookTable);
         bookListPanel.add(scrollPane, BorderLayout.CENTER);
         add(bookListPanel, BorderLayout.CENTER);
@@ -71,18 +73,30 @@ public class MainFrame extends JFrame {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         borrowButton = new JButton("Borrow");
         borrowButton.setVisible(false); // 초기에는 버튼을 숨김
-        borrowButton.addActionListener(e -> borrowBook(bookTable));
+        borrowButton.addActionListener(e -> {
+            int selectedRow = bookTable.getSelectedRow();
+            if (selectedRow != -1) {
+                int bookId = (int) bookTable.getValueAt(selectedRow, 0);
+                libraryManager.borrowBook(userSession.getUserId(), bookId); // 대출하기 메서드 호출
+            }
+        });
         buttonPanel.add(borrowButton);
 
-        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
         rightPanel.add(buttonPanel);
-        
-        // 책 목록 조회
-        displayBooks(tableModel);
+
+        // 테이블 행 선택 리스너 추가
+        bookTable.getSelectionModel().addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting() && bookTable.getSelectedRow() != -1) {
+                borrowButton.setVisible(true); // 대출하기 버튼 표시
+            } else {
+                borrowButton.setVisible(false); // 대출하기 버튼 숨김
+            }
+        });
 
         // 마이페이지 버튼 클릭 시 마이페이지로 이동
         myPageButton.addActionListener(e -> {
-            UserFrame userFrame = new UserFrame(userSession, this);
+            UserFrame userFrame = new UserFrame(libraryManager, userSession, this);
             userFrame.setVisible(true);
             setVisible(false);
         });
@@ -94,43 +108,36 @@ public class MainFrame extends JFrame {
             setVisible(false);
         });
 
-
-        // 테이블 행 선택 리스너 추가
-        bookTable.getSelectionModel().addListSelectionListener(event -> {
-            if (!event.getValueIsAdjusting() && bookTable.getSelectedRow() != -1) {
-                borrowButton.setVisible(true); // 책이 선택되면 버튼을 보이게 함
-            } else {
-                borrowButton.setVisible(false); // 선택이 해제되면 버튼을 숨김
-            }
-        });
+        // 책 목록 불러오기
+        loadBookList();
     }
 
-    private void displayBooks(DefaultTableModel tableModel) {
+    private void loadBookList() {
+        tableModel.setRowCount(0);
+        
         List<Book> books = libraryManager.getBooks();
         for (Book book : books) {
-            tableModel.addRow(new Object[]{
-                book.getTitle(),
-                book.getAuthorName(),
-                book.getPublisher(),
-                book.isBorrowed() ? "Yes" : "No"
-            });
+            String category = getCategoryName(book.getCategoryId());
+            tableModel.addRow(new Object[]{book.getBookId(), category, book.getTitle(), book.getAuthorName(), book.getPublisher(), book.isBorrowed() ? "Yes" : "No"});
+        }
+    }
+    
+
+    private String getCategoryName(int categoryId) {
+        switch (categoryId) {
+            case 1: return "Novel";
+            case 2: return "Essay";
+            case 3: return "Literature";
+            case 4: return "Science";
+            default: return "Unknown";
         }
     }
 
-    private void borrowBook(JTable bookTable) {
-        int selectedRow = bookTable.getSelectedRow();
-        if (selectedRow != -1) {
-            String bookTitle = (String) bookTable.getValueAt(selectedRow, 0);
-            String isBorrowed = (String) bookTable.getValueAt(selectedRow, 3);
-            if ("Yes".equals(isBorrowed)) {
-                JOptionPane.showMessageDialog(this, bookTitle + "는(은) 대출이 불가능합니다:(", "도서 대출 불가능", JOptionPane.PLAIN_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, bookTitle + "를(을) 대출했습니다!", "도서 대출 완료", JOptionPane.PLAIN_MESSAGE);
-            }
+    @Override
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        if (visible) {
+            loadBookList();
         }
-    }
-
-    public LibraryManager getLibraryManager() {
-        return libraryManager;
     }
 }
