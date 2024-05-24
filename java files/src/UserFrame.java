@@ -49,16 +49,17 @@ public class UserFrame extends JFrame {
         bottomPanel.add(backButton);
 
         JButton returnButton = new JButton("Return Book");
-        returnButton.setEnabled(false); // 책이 선택되지 않은 상태에서는 비활성화
+        returnButton.setEnabled(false);
         returnButton.addActionListener(e -> {
             if (selectedBookId != -1) {
                 libraryManager.returnBook(userSession.getUserId(), selectedBookId);
-                displayBorrowedBooks(tableModel); // 목록 새로 고침
-                returnButton.setEnabled(false); // 반납 후 버튼 비활성화
+                displayBorrowedBooks(tableModel); 
+                returnButton.setEnabled(false); 
+                JOptionPane.showMessageDialog(this, "This book has been returned.", "Book Return Complete", JOptionPane.PLAIN_MESSAGE);
             }
         });
         bottomPanel.add(returnButton);
-        add(bottomPanel, BorderLayout.SOUTH);
+        add(bottomPanel, BorderLayout.SOUTH);        
 
         // 테이블에서 책을 선택하면 반납 버튼 활성화
         borrowedBookTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {

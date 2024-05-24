@@ -75,9 +75,14 @@ public class MainFrame extends JFrame {
         borrowButton.setVisible(false); // 초기에는 버튼을 숨김
         borrowButton.addActionListener(e -> {
             int selectedRow = bookTable.getSelectedRow();
-            if (selectedRow != -1) {
+            if (selectedRow != -1 && bookTable.getValueAt(selectedRow, 5) == "No") {
                 int bookId = (int) bookTable.getValueAt(selectedRow, 0);
                 libraryManager.borrowBook(userSession.getUserId(), bookId); // 대출하기 메서드 호출
+                boolean isBorrowed = true;
+                tableModel.setValueAt(isBorrowed ? "Yes" : "No", selectedRow, 5);
+                JOptionPane.showMessageDialog(this, bookTable.getValueAt(selectedRow, 2) + " has been borrowed!", "Book Borrow Complete", JOptionPane.PLAIN_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, bookTable.getValueAt(selectedRow, 2) + " cannot be borrowed :(", "Book Borrow Unavailable", JOptionPane.PLAIN_MESSAGE);
             }
         });
         buttonPanel.add(borrowButton);
