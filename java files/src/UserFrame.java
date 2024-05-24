@@ -11,23 +11,23 @@ public class UserFrame extends JFrame {
     private LibraryManager libraryManager;
     private int selectedBookId = -1; // 선택된 책의 ID를 저장
 
-    public UserFrame(UserSession session, MainFrame mainFrame) {
+    public UserFrame(LibraryManager libraryManager, UserSession session, MainFrame mainFrame) {
         this.userSession = session;
         this.mainFrame = mainFrame;
-        this.libraryManager = mainFrame.getLibraryManager(); // 메인 프레임에서 LibraryManager를 전달받음
+        this.libraryManager = libraryManager;
         setTitle("My Page");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        JLabel welcomeLabel = new JLabel(userSession.getUserName() + "님의 마이페이지");
+        JLabel welcomeLabel = new JLabel(userSession.getUserName() + "'s MyPage");
         welcomeLabel.setHorizontalAlignment(SwingConstants.CENTER);
         add(welcomeLabel, BorderLayout.NORTH);
 
         // 대출한 책 목록 테이블
         JTable borrowedBookTable = new JTable();
-        DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"Book ID", "Title", "Author Name", "Publisher", "Is Borrowed"}, 0) {
+        DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"Book ID", "Title", "Author Name", "Publisher", "Borrow Date", "Return Date"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false; // 모든 셀을 수정 불가능하게 설정
@@ -49,16 +49,17 @@ public class UserFrame extends JFrame {
         bottomPanel.add(backButton);
 
         JButton returnButton = new JButton("Return Book");
-        returnButton.setEnabled(false); // 책이 선택되지 않은 상태에서는 비활성화
+        returnButton.setEnabled(false);
         returnButton.addActionListener(e -> {
             if (selectedBookId != -1) {
-                libraryManager.returnBook(selectedBookId);
-                displayBorrowedBooks(tableModel); // 목록 새로 고침
-                returnButton.setEnabled(false); // 반납 후 버튼 비활성화
+                libraryManager.returnBook(userSession.getUserId(), selectedBookId);
+                displayBorrowedBooks(tableModel); 
+                returnButton.setEnabled(false); 
+                JOptionPane.showMessageDialog(this, "This book has been returned.", "Book Return Complete", JOptionPane.PLAIN_MESSAGE);
             }
         });
         bottomPanel.add(returnButton);
-        add(bottomPanel, BorderLayout.SOUTH);
+        add(bottomPanel, BorderLayout.SOUTH);        
 
         // 테이블에서 책을 선택하면 반납 버튼 활성화
         borrowedBookTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -77,14 +78,15 @@ public class UserFrame extends JFrame {
 
     private void displayBorrowedBooks(DefaultTableModel tableModel) {
         tableModel.setRowCount(0); // 기존 데이터 삭제
-        List<Book> borrowedBooks = libraryManager.getBorrowedBooks(userSession.getUserId());
-        for (Book book : borrowedBooks) {
+        List<BorrowedBook> borrowedBooks = libraryManager.getBorrowedBooks(userSession.getUserId());
+        for (BorrowedBook book : borrowedBooks) {
             tableModel.addRow(new Object[]{
                 book.getBookId(),
                 book.getTitle(),
                 book.getAuthorName(),
                 book.getPublisher(),
-                book.isBorrowed() ? "Yes" : "No"
+                book.getBorrowDate(),
+                book.getReturnDate()
             });
         }
     }
