@@ -41,7 +41,7 @@ public class LibraryManager {
         "WHERE LOWER(b.title) LIKE ? OR LOWER(b.author_name) LIKE ? OR LOWER(c.category) LIKE ?";
         
         try (Connection connection = App.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(query)) {
+            PreparedStatement stmt = connection.prepareStatement(query)) {
             String searchText = "%" + filterText.toLowerCase() + "%";
             stmt.setString(1, searchText);
             stmt.setString(2, searchText);
@@ -73,7 +73,7 @@ public class LibraryManager {
                        "GROUP BY c.category";
 
         try (Connection connection = App.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(query)) {
+            PreparedStatement stmt = connection.prepareStatement(query)) {
             String searchText = "%" + filterText.toLowerCase() + "%";
             stmt.setString(1, searchText);
             stmt.setString(2, searchText);
@@ -90,13 +90,29 @@ public class LibraryManager {
         return bookCounts;
     }
 
-    private int getCategoryId(String searchText) {
-        switch (searchText) {
-            case "novel": return 1;
-            case "essay": return 2;
-            case ";iterature": return 3;
-            case "science": return 4;
-            default: return -1;
+    public Book getBookById(int bookId) {
+        String selectBookSQL = "SELECT * FROM Book WHERE book_id = ?";
+        
+        try (Connection connection = App.getConnection();
+            PreparedStatement selectBookStatement = connection.prepareStatement(selectBookSQL)) {
+            
+            selectBookStatement.setInt(1, bookId);
+            ResultSet resultSet = selectBookStatement.executeQuery();
+            
+            if (resultSet.next()) {
+                int categoryId = resultSet.getInt("category_id");
+                String title = resultSet.getString("title");
+                String authorName = resultSet.getString("author_name");
+                String publisher = resultSet.getString("publisher");
+                boolean isBorrowed = resultSet.getBoolean("is_borrowed");
+                
+                return new Book(bookId, categoryId, title, authorName, publisher, isBorrowed);
+            } else {
+                return null;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
@@ -136,8 +152,28 @@ public class LibraryManager {
             return false;
         }
     }
-    
 
+    public boolean updateBook(Book book) {
+        String updateBookSQL = "UPDATE Book SET category_id = ?, title = ?, author_name = ?, publisher = ? WHERE book_id = ?";
+        
+        try (Connection connection = App.getConnection();
+            PreparedStatement updateBookStatement = connection.prepareStatement(updateBookSQL)) {
+            
+            updateBookStatement.setInt(1, book.getCategoryId());
+            updateBookStatement.setString(2, book.getTitle());
+            updateBookStatement.setString(3, book.getAuthorName());
+            updateBookStatement.setString(4, book.getPublisher());
+            updateBookStatement.setInt(5, book.getBookId());
+            
+            int affectedRows = updateBookStatement.executeUpdate();
+            
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
     public void borrowBook(int userId, int bookId) {
         String insertBorrowSQL = "INSERT INTO Borrow (borrow_date, return_date, user_id, book_id) VALUES (?, ?, ?, ?)";
         String updateBookSQL = "UPDATE Book SET is_borrowed = true WHERE book_id = ?";
