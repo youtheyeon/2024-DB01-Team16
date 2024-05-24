@@ -117,7 +117,7 @@ public class LibraryManager {
     }
     
 
-    public void removeBook(int bookId) {
+    public boolean removeBook(int bookId) {
         String deleteBorrowSQL = "DELETE FROM Borrow WHERE book_id = ?";
         String deleteBookSQL = "DELETE FROM Book WHERE book_id = ?";
     
@@ -130,8 +130,10 @@ public class LibraryManager {
     
             deleteBookStatement.setInt(1, bookId);
             deleteBookStatement.executeUpdate();
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
     }
     

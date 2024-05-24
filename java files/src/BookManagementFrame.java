@@ -79,17 +79,25 @@ public class BookManagementFrame extends JFrame {
             }
         });
 
-        // 삭제 버튼 클릭 시 선택된 책 삭제
+        // 삭제 버튼 클릭 시 책 삭제
         deleteButton.addActionListener(e -> {
-            int selectedRow = bookTable.getSelectedRow();
-            if (selectedRow != -1) {
-                int bookId = (int) bookTable.getValueAt(selectedRow, 0);
-                libraryManager.removeBook(bookId);
-                loadBookList();
-            } else {
-                JOptionPane.showMessageDialog(this, "Select book to delete", "Selection Error", JOptionPane.PLAIN_MESSAGE);
+            String bookIdStr = JOptionPane.showInputDialog(this, "Enter the ID of the book to delete:", "Delete Book", JOptionPane.PLAIN_MESSAGE);
+            if (bookIdStr != null) {
+                try {
+                    int bookId = Integer.parseInt(bookIdStr);
+                    boolean removed = libraryManager.removeBook(bookId);
+                    if (removed) {
+                        loadBookList();
+                        JOptionPane.showMessageDialog(this, "Book deleted successfully.", "Success", JOptionPane.PLAIN_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Book ID not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Enter a valid book ID.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
+        
 
         // 뒤로가기 버튼 클릭 시 메인 페이지로 이동
         backButton.addActionListener(e -> {
