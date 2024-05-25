@@ -13,7 +13,9 @@ public class LibraryManager {
 
     public List<FilteredBooks> getBooks() {
         List<FilteredBooks> books = new ArrayList<>();
-        String selectSQL = "SELECT book_id, category, title, author_name, publisher, is_borrowed FROM FilteredBooks";
+        String selectSQL = "SELECT fb.book_id, c.category, fb.title, fb.author_name, fb.publisher, fb.is_borrowed " +
+                            "FROM FilteredBooks fb " +
+                            "JOIN Category c ON fb.category_id = c.category_id";
     
         try (Connection connection = App.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(selectSQL);
@@ -63,10 +65,11 @@ public class LibraryManager {
 
     public List<FilteredBooks> getBooksByFilter(String filterText) {
         List<FilteredBooks> books = new ArrayList<>();
-        String query = "SELECT book_id, category, title, author_name, publisher, is_borrowed " +
-                       "FROM FilteredBooks " +
-                       "WHERE LOWER(title) LIKE ? OR LOWER(author_name) LIKE ? OR LOWER(category) LIKE ?";
-        
+        String query = "SELECT fb.book_id, c.category, fb.title, fb.author_name, fb.publisher, fb.is_borrowed " +
+                       "FROM FilteredBooks fb " +
+                       "JOIN Category c ON fb.category_id = c.category_id " +
+                       "WHERE LOWER(fb.title) LIKE ? OR LOWER(fb.author_name) LIKE ? OR LOWER(c.category) LIKE ?";
+    
         try (Connection connection = App.getConnection();
              PreparedStatement stmt = connection.prepareStatement(query)) {
             String searchText = "%" + filterText.toLowerCase() + "%";
