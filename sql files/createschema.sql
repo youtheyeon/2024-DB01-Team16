@@ -46,6 +46,11 @@ LEFT JOIN
   User u ON br.user_id = u.user_id
 LEFT JOIN 
   Category c ON b.category_id = c.category_id;
+  
+-- FilteredBooks 뷰 생성
+CREATE VIEW FilteredBooks AS
+SELECT b.book_id, b.category_id, b.title, b.author_name, b.publisher, b.is_borrowed
+FROM Book b;
 
 -- 인덱스 추가
 CREATE INDEX idx_title ON Book(title);

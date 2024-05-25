@@ -1,5 +1,6 @@
 -- BookDetails 뷰 삭제
 DROP VIEW IF EXISTS BookDetails;
+DROP VIEW IF EXISTS FilteredBooks;
 
 -- 인덱스 삭제
 DROP INDEX IF EXISTS idx_title ON Book;
