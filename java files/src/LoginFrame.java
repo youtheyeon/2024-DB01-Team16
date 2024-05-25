@@ -3,8 +3,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class LoginFrame extends JFrame {
@@ -62,10 +62,15 @@ public class LoginFrame extends JFrame {
                 return;
             }
 
-            if (saveToDatabase(userName, phoneNumber)) {
+            int userId = getUserIdByUserName(userName);
+            if (userId == -1) {
+                userId = saveToDatabase(userName, phoneNumber);
+            }
+
+            if (userId != -1) {
                 UserSession session = new UserSession();
                 session.setUserName(userName);
-                session.setUserId(1);
+                session.setUserId(userId);
                 session.setPhoneNumber(phoneNumber);
 
                 JOptionPane.showMessageDialog(LoginFrame.this, "Hello, " + session.getUserName() + " :)", "Login Successful", JOptionPane.PLAIN_MESSAGE);
@@ -77,18 +82,42 @@ public class LoginFrame extends JFrame {
             }
         }
 
-        private boolean saveToDatabase(String userName, int phoneNumber) {
+        private int getUserIdByUserName(String userName) {
+            String query = "SELECT user_id FROM user WHERE user_name = ?";
+
+            try (Connection connection = App.getConnection();
+                 PreparedStatement stmt = connection.prepareStatement(query)) {
+                stmt.setString(1, userName);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getInt("user_id");
+                    }
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            return -1;
+        }
+
+        private int saveToDatabase(String userName, int phoneNumber) {
             String query = "INSERT INTO user (user_name, phone_num) VALUES (?, ?)";
 
             try (Connection connection = App.getConnection();
-                PreparedStatement stmt = connection.prepareStatement(query)) {
+                 PreparedStatement stmt = connection.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
                 stmt.setString(1, userName);
                 stmt.setInt(2, phoneNumber);
                 stmt.executeUpdate();
-                return true;
+
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        return generatedKeys.getInt(1);
+                    } else {
+                        throw new SQLException("Creating user failed, no ID obtained.");
+                    }
+                }
             } catch (SQLException ex) {
                 ex.printStackTrace();
-                return false;
+                return -1;
             }
         }
     }
